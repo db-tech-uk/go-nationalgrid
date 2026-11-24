@@ -13,10 +13,10 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/db-tech-uk/go-geos-draw/geom"
+	"github.com/db-tech-uk/go-text/fonts"
 	"github.com/llgcode/draw2d"
 	"github.com/llgcode/draw2d/draw2dimg"
-	"github.com/rockwell-uk/go-geos-draw/geom"
-	"github.com/rockwell-uk/go-text/fonts"
 	geos "github.com/twpayne/go-geos"
 )
 
@@ -331,8 +331,8 @@ func TestGridCoordsToGeom(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	if !reflect.DeepEqual(expected, g) {
-		t.Fatalf("expected %+v, got %+v", expected, g)
+	if expected.String() != g.String() {
+		t.Fatalf("expected %s, got %s", expected, g)
 	}
 }
 
@@ -360,7 +360,7 @@ func TestGetAllFullSquareCoords(t *testing.T) {
 		expected = append(expected, i)
 	}
 
-	tests := map[string]*geos.Bounds{}
+	tests := map[string]*geos.Box2D{}
 
 	for key, square := range NationalGridSquares {
 		tileX := square[0] * SquareSize
@@ -371,7 +371,7 @@ func TestGetAllFullSquareCoords(t *testing.T) {
 		maxX := tileX + SquareSize
 		maxY := tileY + SquareSize
 
-		env := geos.NewBounds(minX, minY, maxX, maxY)
+		env := geos.NewBox2D(minX, minY, maxX, maxY)
 
 		k := strings.ToLower(key)
 		tests[k] = env

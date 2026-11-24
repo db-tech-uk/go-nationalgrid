@@ -6,13 +6,13 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/rockwell-uk/go-geos-draw/geom"
+	"github.com/db-tech-uk/go-geos-draw/geom"
 	geos "github.com/twpayne/go-geos"
 )
 
 var (
-	gridSquares     = make(map[string]*geos.Bounds)
-	subSquareCoords = make(map[string]map[int]*geos.Bounds)
+	gridSquares     = make(map[string]*geos.Box2D)
+	subSquareCoords = make(map[string]map[int]*geos.Box2D)
 )
 
 func init() {
@@ -35,7 +35,7 @@ func init() {
 
 		gridSquares[key] = gridSquareGeom.Bounds()
 
-		subSquareCoords[key] = make(map[int]*geos.Bounds)
+		subSquareCoords[key] = make(map[int]*geos.Box2D)
 	}
 
 	for key, gridSquare := range gridSquares {
@@ -63,7 +63,7 @@ func init() {
 }
 
 // determine which squares / subsquares a geometry from a shapefile is within.
-func GetSubSquares(g *geos.Bounds) map[string][]int {
+func GetSubSquares(g *geos.Box2D) map[string][]int {
 	subSquares := make(map[string][]int)
 
 	for key, gridSquare := range gridSquares {
@@ -82,7 +82,7 @@ func GetSubSquares(g *geos.Bounds) map[string][]int {
 	return subSquares
 }
 
-func intersects(item *geos.Bounds, target *geos.Bounds) bool {
+func intersects(item *geos.Box2D, target *geos.Box2D) bool {
 	return item.Intersects(target)
 }
 
@@ -162,12 +162,13 @@ func getGridCoordCenter(gridRef GridRef) (float64, float64, error) {
 		targetSize = SquareSize
 	}
 
-	g, err = gridCoordsToGeom(
-		[]float64{
-			targetBlx,
-			targetBly,
-		},
-		targetSize,
+	// target coords are already in metres, so build the bounds directly
+	// (gridCoordsToGeom expects grid-square indices and would rescale them).
+	g, err = geom.BoundsGeom(
+		targetBlx,
+		targetBlx+targetSize,
+		targetBly,
+		targetBly+targetSize,
 	)
 	if err != nil {
 		return x, y, err
@@ -181,8 +182,8 @@ func getGridCoordCenter(gridRef GridRef) (float64, float64, error) {
 func gridCoordsToGeom(bl []float64, tileSize float64) (*geos.Geom, error) {
 	var g *geos.Geom
 
-	xmin := bl[0]
-	ymin := bl[1]
+	xmin := bl[0] * tileSize
+	ymin := bl[1] * tileSize
 	xmax := xmin + tileSize
 	ymax := ymin + tileSize
 
